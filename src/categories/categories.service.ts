@@ -13,6 +13,28 @@ export class CategoriesService {
         private readonly categoryRepository: Repository<Category>,
     ) { }
 
+    async createBulkCategories(createCategoriesDto: CreateCategoryDto[]): Promise<CategoryResponseDto[]> {
+        const categories = createCategoriesDto.map((dto) =>
+            this.categoryRepository.create({
+                name: dto.name,
+                description: dto.description,
+            }),
+        );
+
+        const savedCategories = await this.categoryRepository.save(categories);
+
+        return savedCategories.map(
+            (category) =>
+                new CategoryResponseDto(
+                    category.id,
+                    category.name,
+                    category.description,
+                    category.createdAt,
+                    category.updatedAt,
+                ),
+        );
+    }
+
     async createCategory(createCategoryDto: CreateCategoryDto): Promise<CategoryResponseDto> {
         const { name, description } = createCategoryDto;
 

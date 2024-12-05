@@ -40,7 +40,7 @@ import { CartItem } from './carts/entities/cart.entity';
     ProductsModule,
     CategoriesModule,
     CartsModule,
-    OrderModule,
+    OrderModule
   ],
   controllers: [AppController],
   providers: [AppService, IsUniqueConstraint],

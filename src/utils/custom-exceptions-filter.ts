@@ -5,7 +5,7 @@ import {
     HttpException,
     HttpStatus,
 } from '@nestjs/common';
-import { CommonResponseDto } from './common-response.dto';
+import { CustomResponseDto } from './custom-response.dto';
 
 @Catch()
 export class CustomExceptionsFilter implements ExceptionFilter {
@@ -21,9 +21,10 @@ export class CustomExceptionsFilter implements ExceptionFilter {
                 : HttpStatus.INTERNAL_SERVER_ERROR;
 
         // Format the error response
-        const errorResponse = new CommonResponseDto(
+        const errorResponse = new CustomResponseDto(
             status,
             exception.response?.message || exception.message || 'Internal server error',
+            null,
             null,
             exception.response?.error || null,
         );

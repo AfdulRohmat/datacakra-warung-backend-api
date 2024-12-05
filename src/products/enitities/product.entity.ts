@@ -15,16 +15,16 @@ export class Product {
     @Column({ type: 'text', nullable: true })
     description: string;
 
-    @Column({ type: 'int', nullable: true })
+    @Column({ type: 'real', nullable: true })
     weight: number;
 
-    @Column({ type: 'int', nullable: true })
+    @Column({ type: 'real', nullable: true })
     width: number;
 
-    @Column({ type: 'int', nullable: true })
+    @Column({ type: 'real', nullable: true })
     length: number;
 
-    @Column({ type: 'int', nullable: true })
+    @Column({ type: 'real', nullable: true })
     height: number;
 
     @Column({ type: 'varchar', length: 255, nullable: true })
