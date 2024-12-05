@@ -24,7 +24,7 @@ export class IsUniqueConstraint implements ValidatorConstraintInterface {
     }
 
     defaultMessage?(validationArguments?: ValidationArguments): string {
-        return 'data sudah ada';
+        return 'data already exists';
     }
 
 }

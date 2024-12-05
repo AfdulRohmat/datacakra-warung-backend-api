@@ -10,6 +10,8 @@ import { EmailService } from 'src/email/email.service';
 import { ActivateAccountRequestDTO } from './dto/request/activate-account-request.dto';
 import { ActivateAccountResponseDTO } from './dto/response/activate-account-response.dto';
 import { JwtService } from '@nestjs/jwt';
+import { LoginRequestDTO } from './dto/request/login-request.dto';
+import { LoginResponseDto as LoginResponseDTO } from './dto/response/login-response.dto';
 
 
 @Injectable()
@@ -49,10 +51,14 @@ export class AuthService {
     // send to email
     this.emailService.sendUserConfirmation(user)
 
-    return new RegisterResponseDTO(user.email, "Registrasi berhasil Mohon check email anda")
+    return new RegisterResponseDTO(
+      user.email,
+      "Registration success, please check your email or use this activation code to activate your account",
+      user.activationCode
+    )
   }
 
-  async activateAccount(request: ActivateAccountRequestDTO): Promise<RegisterResponseDTO> {
+  async activateAccount(request: ActivateAccountRequestDTO): Promise<ActivateAccountResponseDTO> {
     // find user base on email, if not exist, throw error
     const user = await this.userRepository.findOneOrFail({
       where: {
@@ -63,7 +69,7 @@ export class AuthService {
     // check if the email alreadt verified or not, if verified throw error
     if (user.isVerified) {
       // throw new HttpException('', HttpStatus.BAD_REQUEST);
-      throw new BadRequestException('Proses gagal', { cause: new Error(), description: 'Akun sudah terverifikasi. Silahkan login' })
+      throw new BadRequestException('Proses failed', { cause: new Error(), description: 'Account has been verified. Please login' })
     }
 
     // check activation code that store inside db before
@@ -72,27 +78,48 @@ export class AuthService {
       user.isVerified = true;
       await this.userRepository.save(user);
 
-      return new ActivateAccountResponseDTO(user.email, "Aktivasi akun berhasil, silahkan login")
+      return new ActivateAccountResponseDTO(user.email, "Activation success, please login")
     } else {
-      throw new BadRequestException('Proses gagal', { cause: new Error(), description: 'Kode aktivasi tidak valid' })
+      throw new BadRequestException('Proses failed', { cause: new Error(), description: 'Invalid activation code' })
     }
   }
 
-  async login(user: User) {
+  async login(request: LoginRequestDTO): Promise<LoginResponseDTO> {
+
+    const user: User = await this.userRepository.findOneOrFail({
+      where: {
+        email: request.email
+      }
+    })
+
+    if (!user) {
+      throw new BadRequestException('Proses failed', { cause: new Error(), description: 'Wrong email or password' })
+    }
+
+    if (user.isVerified == false) {
+      throw new BadRequestException('Proses failed', { cause: new Error(), description: 'Account not verified. Please verify first' })
+    }
+
+    const actualPassword: boolean = await bcrypt.compare(request.password, user.password)
+    if (actualPassword == false) {
+      throw new BadRequestException('Proses failed', { cause: new Error(), description: 'Wrong email or password' })
+    }
+
     const payload = {
       username: user.email,
       sub: {
         username: user.username,
       }
     }
-    const { username, email } = user
     const jwtSign = this.jwtService.sign(payload)
 
-    return {
-      username,
-      email,
-      accessToken: jwtSign
-    }
+    return new LoginResponseDTO(
+      user.username,
+      user.email,
+      jwtSign
+    )
+
+
   }
 
   async validateUser(username: string, password: string) {
@@ -103,7 +130,7 @@ export class AuthService {
     })
 
     if (user.isVerified == false) {
-      throw new BadRequestException('Proses gagal', { cause: new Error(), description: 'Akun belum terverifikasi. Silahkan verifikasi terlebih dahulu' })
+      throw new BadRequestException('Proses failed', { cause: new Error(), description: 'Account not verified. Please verify first' })
     }
 
     const actualPassword = await bcrypt.compare(password, user.password)
